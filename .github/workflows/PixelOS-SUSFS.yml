@@ -8,12 +8,12 @@ on:
         RELEASE_CONFIG:
           description: 'Upload to Releases'
           required: true
-          default: true
+          default: false
           type: boolean
         KERNEL_SOURCE:
           description: 'Kernel Source'
           required: true
-          default: "https://github.com/natsumerinchan/android_kernel_oneplus_sm8350.git"
+          default: "https://github.com/asgdrgsdsdgfa/android_kernel_oneplus_sm8350.git"
           type: string
         KERNEL_SOURCE_BRANCH:
           description: 'kernel Branch'

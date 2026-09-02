@@ -111,6 +111,27 @@ jobs:
             git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
           fi
           echo "=========================Make=========================="
+          echo "=========================TOOLCHAIN=========================="
+          which clang
+          which clang++
+          which ld
+          which ld.lld
+          which aarch64-linux-gnu-ld || true
+
+          echo "=== versions ==="
+          clang --version | head -1
+          ld --version | head -1
+          ld.lld --version | head -1
+
+          echo "=== variables ==="
+          echo "CC=$CC"
+          echo "LD=$LD"
+          echo "CROSS_COMPILE=$CROSS_COMPILE"
+          echo "LLVM=$LLVM"
+          echo "LLVM_IAS=$LLVM_IAS"
+
+          echo "=========================VDSO MAKEFILE=========================="
+          sed -n '1,220p' arch/arm64/kernel/vdso/Makefile
           make O=out \
             CC="ccache $CLANG_PATH/bin/clang" \
             CXX="ccache $CLANG_PATH/bin/clang++" \
@@ -143,33 +164,41 @@ jobs:
             2>&1 | tee kernel.log
 
       
-      - name: Create Anykernel3 file
+      - name: Create AnyKernel3 file
         run: |
           cd $GITHUB_WORKSPACE/kernel
           export KERNEL_PATH=$PWD
-          git clone https://gitlab.com/inferno0230/AnyKernel3.git --depth=1 $KERNEL_PATH/AnyKernel3
-          if test -e $KERNEL_PATH/out/arch/arm64/boot/Image && test -d $KERNEL_PATH/AnyKernel3; then
-             zip_name="PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
-             cd $KERNEL_PATH/AnyKernel3
-             cp $KERNEL_PATH/out/arch/arm64/boot/Image $KERNEL_PATH/AnyKernel3
-             zip -r ${zip_name} *
-             mv ${zip_name} $KERNEL_PATH/out/arch/arm64/boot
+
+          git clone https://gitlab.com/inferno0230/AnyKernel3.git --depth=1 "$KERNEL_PATH/AnyKernel3"
+
+          if test -e "$KERNEL_PATH/out/arch/arm64/boot/Image"; then
+            zip_name="PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
+
+            cd "$KERNEL_PATH/AnyKernel3"
+            cp "$KERNEL_PATH/out/arch/arm64/boot/Image" .
+
+            zip -r "$KERNEL_PATH/$zip_name" *
+            echo "ZIP created: $KERNEL_PATH/$zip_name"
+            ls -lh "$KERNEL_PATH/$zip_name"
+          else
+            echo "ERROR: kernel Image was not found!"
+            exit 1
           fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: PixelOS-SUSFS-martini-${{ env.TAG_NAME }}
-          path: |
-            "PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
+          path: kernel/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip
+          if-no-files-found: error
 
       - name: Upload to Release
         if: github.event.inputs.RELEASE_CONFIG == 'true'
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
-          tag: "ONEPLUS9RT-PixelOS-SUSFS-${{ env.TAG_NAME }}"
-          name: "PixelOS SUSFS martini ${{ env.TAG_NAME }}"
+          artifacts: kernel/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip
+          tag: ONEPLUS9RT-PixelOS-SUSFS-${{ env.TAG_NAME }}
+          name: PixelOS SUSFS martini ${{ env.TAG_NAME }}
           allowUpdates: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}

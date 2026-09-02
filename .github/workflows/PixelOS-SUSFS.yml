@@ -104,7 +104,6 @@ jobs:
           export KERNEL_PATH=$PWD
           export CLANG_PATH=~/clang
           export PATH=${CLANG_PATH}/bin:${PATH}
-          export CLANG_TRIPLE=aarch64-linux-gnu-
           export ARCH=arm64
           export SUBARCH=arm64
           echo "===================Setup Environment Again==================="

@@ -161,13 +161,13 @@ jobs:
         with:
           name: PixelOS-SUSFS-martini-${{ env.TAG_NAME }}
           path: |
-            kernel/out/arch/arm64/boot/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip
+            "PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
 
       - name: Upload to Release
         if: github.event.inputs.RELEASE_CONFIG == 'true'
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "kernel/out/arch/arm64/boot/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
+          artifacts: "PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
           tag: "ONEPLUS9RT-PixelOS-SUSFS-${{ env.TAG_NAME }}"
           name: "PixelOS SUSFS martini ${{ env.TAG_NAME }}"
           allowUpdates: true

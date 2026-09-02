@@ -111,27 +111,6 @@ jobs:
             git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
           fi
           echo "=========================Make=========================="
-          echo "=========================TOOLCHAIN=========================="
-          which clang
-          which clang++
-          which ld
-          which ld.lld
-          which aarch64-linux-gnu-ld || true
-
-          echo "=== versions ==="
-          clang --version | head -1
-          ld --version | head -1
-          ld.lld --version | head -1
-
-          echo "=== variables ==="
-          echo "CC=$CC"
-          echo "LD=$LD"
-          echo "CROSS_COMPILE=$CROSS_COMPILE"
-          echo "LLVM=$LLVM"
-          echo "LLVM_IAS=$LLVM_IAS"
-
-          echo "=========================VDSO MAKEFILE=========================="
-          sed -n '1,220p' arch/arm64/kernel/vdso/Makefile
           make O=out \
             CC="ccache $CLANG_PATH/bin/clang" \
             CXX="ccache $CLANG_PATH/bin/clang++" \

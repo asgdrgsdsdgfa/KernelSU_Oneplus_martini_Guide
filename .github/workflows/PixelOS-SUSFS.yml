@@ -146,30 +146,16 @@ jobs:
       - name: Create AnyKernel3 file
         run: |
           cd $GITHUB_WORKSPACE/kernel
-          export KERNEL_PATH=$PWD
-
-          git clone https://gitlab.com/inferno0230/AnyKernel3.git --depth=1 "$KERNEL_PATH/AnyKernel3"
-
-          if test -e "$KERNEL_PATH/out/arch/arm64/boot/Image"; then
-            zip_name="PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
-
-            cd "$KERNEL_PATH/AnyKernel3"
-            cp "$KERNEL_PATH/out/arch/arm64/boot/Image" .
-
-            zip -r "$KERNEL_PATH/$zip_name" *
-            echo "ZIP created: $KERNEL_PATH/$zip_name"
-            ls -lh "$KERNEL_PATH/$zip_name"
-          else
-            echo "ERROR: kernel Image was not found!"
-            exit 1
-          fi
+          git clone https://gitlab.com/inferno0230/AnyKernel3.git --depth=1 AnyKernel3
+          cp out/arch/arm64/boot/Image AnyKernel3/
+          cd AnyKernel3
+          zip -r ../PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip *
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: PixelOS-SUSFS-martini-${{ env.TAG_NAME }}
           path: kernel/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip
-          if-no-files-found: error
 
       - name: Upload to Release
         if: github.event.inputs.RELEASE_CONFIG == 'true'

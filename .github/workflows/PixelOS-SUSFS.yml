@@ -121,7 +121,9 @@ jobs:
             ARCH=arm64 \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
             CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
-            LD=ld.lld \
+            LD="$CLANG_PATH/bin/ld.lld" \
+            LLVM=1 \
+            LLVM_IAS=1 \
             vendor/lahaina-qgki_defconfig
 
           test -f out/.config
@@ -142,7 +144,9 @@ jobs:
             -j$(nproc) \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
             CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
-            LD=ld.lld \
+            LD="$CLANG_PATH/bin/ld.lld" \
+            LLVM=1 \
+            LLVM_IAS=1 \
             2>&1 | tee kernel.log
 
       

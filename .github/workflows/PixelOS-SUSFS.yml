@@ -147,7 +147,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/kernel
           git clone https://gitlab.com/inferno0230/AnyKernel3.git --depth=1 AnyKernel3
-          cp out/arch/arm64/boot/Image AnyKernel3/
+          cp kernel
           cd AnyKernel3
           zip -r ../PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip *
 

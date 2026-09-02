@@ -111,7 +111,6 @@ jobs:
           if [ ! -e "$CLANG_PATH/README.md" ]; then
             git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
           fi
-          sudo apt install --fix-missing
           echo "=========================Make=========================="
           make O=out \
   CC="ccache clang" \
@@ -160,7 +159,7 @@ jobs:
         with:
           name: PixelOS-SUSFS-martini-${{ env.TAG_NAME }}
           path: |
-            kernel/AnyKernel3/*
+            kernel/out/arch/arm64/boot/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip
 
       - name: Upload to Release
         if: github.event.inputs.RELEASE_CONFIG == 'true'

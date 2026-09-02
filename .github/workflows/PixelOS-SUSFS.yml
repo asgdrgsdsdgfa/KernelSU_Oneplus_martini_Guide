@@ -147,6 +147,7 @@ jobs:
             LD="$CLANG_PATH/bin/ld.lld" \
             LLVM=1 \
             LLVM_IAS=1 \
+            V=1 \
             2>&1 | tee kernel.log
 
       

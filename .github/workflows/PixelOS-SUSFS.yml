@@ -115,15 +115,18 @@ jobs:
           make O=out \
             CC="ccache clang" \
             CXX="ccache clang++" \
-            HOSTCC="gcc -B/usr/bin"
-            HOSTCXX="g++ -B/usr/bin"
-            HOSTLD="/usr/bin/ld"
+            HOSTCC="gcc -B/usr/bin" \
+            HOSTCXX="g++ -B/usr/bin" \
+            HOSTLD="/usr/bin/ld" \
             ARCH=arm64 \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
             CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
             LD=ld.lld \
-            $KERNEL_DEFCONFIG
+            vendor/lahaina-qgki_defconfig
 
+          test -f out/.config
+          echo "Defconfig generated successfully"
+          
           # Disable LTO
           if [[ $(echo "$(awk '/MemTotal/ {print $2}' /proc/meminfo) < 16000000" | bc -l) -eq 1 ]]; then
             scripts/config --file out/.config -d LTO -d LTO_CLANG -d THINLTO -e LTO_NONE

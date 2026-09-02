@@ -115,9 +115,9 @@ jobs:
           make O=out \
             CC="ccache clang" \
             CXX="ccache clang++" \
-            HOSTCC="gcc" \
-            HOSTCXX="g++" \
-            HOSTLD="/usr/bin/ld" \
+            HOSTCC="gcc -B/usr/bin"
+            HOSTCXX="g++ -B/usr/bin"
+            HOSTLD="/usr/bin/ld"
             ARCH=arm64 \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
             CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
@@ -132,9 +132,9 @@ jobs:
           make O=out \
             CC="ccache clang" \
             CXX="ccache clang++" \
-            HOSTCC="gcc" \
-            HOSTCXX="g++" \
-            HOSTLD="/usr/bin/ld" \
+            HOSTCC="gcc -B/usr/bin"
+            HOSTCXX="g++ -B/usr/bin"
+            HOSTLD="/usr/bin/ld"
             ARCH=arm64 \
             -j$(nproc) \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \

@@ -109,8 +109,11 @@ jobs:
 
           echo "=================== Generating defconfig ==================="
           make O=out \
-            CC="ccache clang" \
-            CXX="ccache clang++" \
+            CC="ccache $CLANG_PATH/bin/clang" \
+            CXX="ccache $CLANG_PATH/bin/clang++" \
+            HOSTCC="gcc -B/usr/bin" \
+            HOSTCXX="g++ -B/usr/bin" \
+            HOSTLD="/usr/bin/ld" \
             ARCH=arm64 \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
             CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
@@ -124,8 +127,11 @@ jobs:
 
           echo "=================== Building kernel ==================="
           make O=out \
-            CC="ccache clang" \
-            CXX="ccache clang++" \
+            CC="ccache $CLANG_PATH/bin/clang" \
+            CXX="ccache $CLANG_PATH/bin/clang++" \
+            HOSTCC="gcc -B/usr/bin" \
+            HOSTCXX="g++ -B/usr/bin" \
+            HOSTLD="/usr/bin/ld" \
             ARCH=arm64 \
             -j$(nproc) \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \

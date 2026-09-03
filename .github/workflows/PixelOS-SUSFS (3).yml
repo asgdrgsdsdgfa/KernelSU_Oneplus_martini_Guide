@@ -59,25 +59,24 @@ jobs:
 
       - name: Setup Environment
         run: |
-          export CLANG_PATH=~/clang
-          git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
-          sh -c "$(curl -sSL https://raw.githubusercontent.com/akhilnarang/scripts/master/setup/android_build_env.sh)"
-          sudo apt install --fix-missing
-          export LLVM_VERSION=13
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh $LLVM_VERSION
-          rm ./llvm.sh
-          sudo apt install --fix-missing
-          sudo ln -s --force /usr/bin/clang-$LLVM_VERSION /usr/bin/clang
-          sudo ln -s --force /usr/bin/ld.lld-$LLVM_VERSION /usr/bin/ld.lld
-          sudo ln -s --force /usr/bin/llvm-objdump-$LLVM_VERSION /usr/bin/llvm-objdump
-          sudo ln -s --force /usr/bin/llvm-ar-$LLVM_VERSION /usr/bin/llvm-ar
-          sudo ln -s --force /usr/bin/llvm-nm-$LLVM_VERSION /usr/bin/llvm-nm
-          sudo ln -s --force /usr/bin/llvm-strip-$LLVM_VERSION /usr/bin/llvm-strip
-          sudo ln -s --force /usr/bin/llvm-objcopy-$LLVM_VERSION /usr/bin/llvm-objcopy
-          sudo ln -s --force /usr/bin/llvm-readelf-$LLVM_VERSION /usr/bin/llvm-readelf
-          sudo ln -s --force /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc \
+            bison \
+            build-essential \
+            ccache \
+            flex \
+            git \
+            libelf-dev \
+            libncurses-dev \
+            libssl-dev \
+            python3 \
+            rsync \
+            unzip \
+            zip
+
+          export CLANG_PATH=$HOME/clang
+          git clone --depth=1 https://github.com/kdrag0n/proton-clang "$CLANG_PATH"
 
       - name: Git kernel
         run: |
@@ -107,7 +106,6 @@ jobs:
           if [ ! -e "$CLANG_PATH/README.md" ]; then
             git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
           fi
-          sudo apt install --fix-missing
 
           echo "=================== Generating defconfig ==================="
           make O=out \
@@ -135,7 +133,6 @@ jobs:
             LD=ld.lld \
             2>&1 | tee kernel.log
 
-          # Проверяем, создался ли Image
           if [ ! -f out/arch/arm64/boot/Image ]; then
             echo "❌ Build failed – Image not found"
             exit 1

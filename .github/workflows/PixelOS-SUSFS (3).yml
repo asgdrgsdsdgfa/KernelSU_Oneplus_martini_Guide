@@ -64,24 +64,25 @@ jobs:
 
       - name: Setup Environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            bc \
-            bison \
-            build-essential \
-            ccache \
-            flex \
-            git \
-            libelf-dev \
-            libncurses-dev \
-            libssl-dev \
-            python3 \
-            rsync \
-            unzip \
-            zip
-
-          export CLANG_PATH=$HOME/clang
-          git clone --depth=1 https://github.com/kdrag0n/proton-clang "$CLANG_PATH"
+          export CLANG_PATH=~/clang
+          git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
+          sh -c "$(curl -sSL https://raw.githubusercontent.com/akhilnarang/scripts/master/setup/android_build_env.sh)"
+          sudo apt install --fix-missing
+          export LLVM_VERSION=13
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh $LLVM_VERSION
+          rm ./llvm.sh
+          sudo apt install --fix-missing
+          sudo ln -s --force /usr/bin/clang-$LLVM_VERSION /usr/bin/clang
+          sudo ln -s --force /usr/bin/ld.lld-$LLVM_VERSION /usr/bin/ld.lld
+          sudo ln -s --force /usr/bin/llvm-objdump-$LLVM_VERSION /usr/bin/llvm-objdump
+          sudo ln -s --force /usr/bin/llvm-ar-$LLVM_VERSION /usr/bin/llvm-ar
+          sudo ln -s --force /usr/bin/llvm-nm-$LLVM_VERSION /usr/bin/llvm-nm
+          sudo ln -s --force /usr/bin/llvm-strip-$LLVM_VERSION /usr/bin/llvm-strip
+          sudo ln -s --force /usr/bin/llvm-objcopy-$LLVM_VERSION /usr/bin/llvm-objcopy
+          sudo ln -s --force /usr/bin/llvm-readelf-$LLVM_VERSION /usr/bin/llvm-readelf
+          sudo ln -s --force /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++
 
       - name: Git kernel
         run: |
@@ -111,34 +112,14 @@ jobs:
           if [ ! -e "$CLANG_PATH/README.md" ]; then
             git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
           fi
+          sudo apt install --fix-missing
           echo "=========================Make=========================="
-          make O=out \
-  CC="ccache clang" \
-  CXX="ccache clang++" \
-  HOSTCC="gcc" \
-  HOSTCXX="g++" \
-  HOSTLD="/usr/bin/ld" \
-  ARCH=arm64 \
-  CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
-  CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
-  LD=ld.lld \
-  $KERNEL_DEFCONFIG
+          make O=out CC="ccache clang" CXX="ccache clang++" ARCH=arm64 CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- LD=ld.lld $KERNEL_DEFCONFIG
           # Disable LTO
           if [[ $(echo "$(awk '/MemTotal/ {print $2}' /proc/meminfo) < 16000000" | bc -l) -eq 1 ]]; then
               scripts/config --file out/.config -d LTO -d LTO_CLANG -d THINLTO -e LTO_NONE
           fi
-          make O=out \
-  CC="ccache clang" \
-  CXX="ccache clang++" \
-  HOSTCC="gcc" \
-  HOSTCXX="g++" \
-  HOSTLD="/usr/bin/ld" \
-  ARCH=arm64 \
-  -j`nproc` \
-  CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
-  CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
-  LD=ld.lld \
-  2>&1 | tee kernel.log
+          make O=out CC="ccache clang" CXX="ccache clang++" ARCH=arm64 -j`nproc` CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- LD=ld.lld 2>&1 | tee kernel.log
 
       
       - name: Create Anykernel3 file
@@ -159,7 +140,7 @@ jobs:
         with:
           name: PixelOS-SUSFS-martini-${{ env.TAG_NAME }}
           path: |
-            kernel/out/arch/arm64/boot/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip
+            kernel/AnyKernel3/*
 
       - name: Upload to Release
         if: github.event.inputs.RELEASE_CONFIG == 'true'

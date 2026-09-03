@@ -87,6 +87,11 @@ jobs:
 
           echo "$PYENV_ROOT/shims" >> "$GITHUB_PATH"
 
+          echo "=== PYTHON CHECK ==="
+          which python2
+          python2 --version
+          ls -l "$PYENV_ROOT/shims/python2"
+
           python2 --version
 
           export CLANG_PATH=$HOME/clang
@@ -122,6 +127,9 @@ jobs:
           fi
 
           echo "=================== Generating defconfig ==================="
+                    echo "=== PYTHON2 CHECK IN MAKE STEP ==="
+          which python2
+          python2 --version
           make O=out \
             CC="ccache $CLANG_PATH/bin/clang" \
             CXX="ccache $CLANG_PATH/bin/clang++" \

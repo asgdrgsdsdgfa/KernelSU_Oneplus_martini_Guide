@@ -120,12 +120,12 @@ jobs:
             LD=ld.lld \
             $KERNEL_DEFCONFIG
 
-          # Disable LTO if low memory
-          if [[ $(echo "$(awk '/MemTotal/ {print $2}' /proc/meminfo) < 16000000" | bc -l) -eq 1 ]]; then
-            scripts/config --file out/.config -d LTO -d LTO_CLANG -d THINLTO -e LTO_NONE
-          fi
+          # Явно отключаем LTO (независимо от памяти)
+          echo "=================== Disabling LTO ==================="
+          scripts/config --file out/.config -d LTO -d LTO_CLANG -d THINLTO -e LTO_NONE
 
-          echo "=================== Building kernel ==================="
+          echo "=================== Building kernel with reduced parallelism ==================="
+          # Используем -j2 и добавляем -pipe для ускорения
           make O=out \
             CC="ccache $CLANG_PATH/bin/clang" \
             CXX="ccache $CLANG_PATH/bin/clang++" \
@@ -133,7 +133,7 @@ jobs:
             HOSTCXX="g++ -B/usr/bin" \
             HOSTLD="/usr/bin/ld" \
             ARCH=arm64 \
-            -j$(nproc) \
+            -j2 \
             CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
             CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
             LD=ld.lld \
@@ -141,6 +141,8 @@ jobs:
 
           if [ ! -f out/arch/arm64/boot/Image ]; then
             echo "❌ Build failed – Image not found"
+            echo "Last 50 lines of kernel.log:"
+            tail -n 50 kernel.log
             exit 1
           fi
           echo "✅ Kernel Image built successfully"

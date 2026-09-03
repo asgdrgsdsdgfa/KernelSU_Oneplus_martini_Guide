@@ -59,29 +59,31 @@ jobs:
 
       - name: Setup Environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            bc \
-            bison \
-            build-essential \
-            ccache \
-            flex \
-            git \
-            libelf-dev \
-            libncurses-dev \
-            libssl-dev \
-            python3 \
-            rsync \
-            unzip \
-            zip
-
-          export CLANG_PATH=$HOME/clang
-          git clone --depth=1 https://github.com/kdrag0n/proton-clang "$CLANG_PATH"
+          export CLANG_PATH=~/clang
+          git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
+          sh -c "$(curl -sSL https://raw.githubusercontent.com/akhilnarang/scripts/master/setup/android_build_env.sh)"
+          sudo apt install --fix-missing
+          export LLVM_VERSION=13
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh $LLVM_VERSION
+          rm ./llvm.sh
+          sudo apt install --fix-missing
+          sudo ln -s --force /usr/bin/clang-$LLVM_VERSION /usr/bin/clang
+          sudo ln -s --force /usr/bin/ld.lld-$LLVM_VERSION /usr/bin/ld.lld
+          sudo ln -s --force /usr/bin/llvm-objdump-$LLVM_VERSION /usr/bin/llvm-objdump
+          sudo ln -s --force /usr/bin/llvm-ar-$LLVM_VERSION /usr/bin/llvm-ar
+          sudo ln -s --force /usr/bin/llvm-nm-$LLVM_VERSION /usr/bin/llvm-nm
+          sudo ln -s --force /usr/bin/llvm-strip-$LLVM_VERSION /usr/bin/llvm-strip
+          sudo ln -s --force /usr/bin/llvm-objcopy-$LLVM_VERSION /usr/bin/llvm-objcopy
+          sudo ln -s --force /usr/bin/llvm-readelf-$LLVM_VERSION /usr/bin/llvm-readelf
+          sudo ln -s --force /usr/bin/clang++-$LLVM_VERSION /usr/bin/clang++
 
       - name: Git kernel
         run: |
           git clone "${{ github.event.inputs.KERNEL_SOURCE }}" -b "${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}" kernel --depth=1
-          echo "TAG_NAME=v5.4.$(grep "^SUBLEVEL =" kernel/Makefile | awk '{print $3}')-$(date +"%Y%m%d")" >> $GITHUB_ENV
+          SUBLEVEL=$(grep "^SUBLEVEL =" kernel/Makefile | awk '{print $3}' || echo "0")
+          echo "TAG_NAME=v5.4.${SUBLEVEL}-$(date +"%Y%m%d")" >> $GITHUB_ENV
 
       - name: Setup KernelSU
         if: github.event.inputs.KERNELSU_CONFIG == 'true'
@@ -95,59 +97,63 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/kernel
           export KERNEL_DEFCONFIG=${{ github.event.inputs.KERNEL_DEFCONFIG }}
-          echo "===================Setup Export========================="
           export KERNEL_PATH=$PWD
           export CLANG_PATH=~/clang
           export PATH=${CLANG_PATH}/bin:${PATH}
+          export CLANG_TRIPLE=aarch64-linux-gnu-
           export ARCH=arm64
           export SUBARCH=arm64
-          echo "===================Setup Environment Again==================="
+
           if [ ! -e "$CLANG_PATH/README.md" ]; then
             git clone --depth=1 https://github.com/kdrag0n/proton-clang $CLANG_PATH
           fi
-          echo "=========================Make=========================="
-          make O=out \
-            CC="ccache $CLANG_PATH/bin/clang" \
-            CXX="ccache $CLANG_PATH/bin/clang++" \
-            HOSTCC="gcc -B/usr/bin" \
-            HOSTCXX="g++ -B/usr/bin" \
-            HOSTLD="/usr/bin/ld" \
-            ARCH=arm64 \
-            LLVM=1 \
-            LLVM_IAS=1 \
-            "${KERNEL_DEFCONFIG}"
+          sudo apt install --fix-missing
 
-          test -f out/.config
-          echo "Defconfig generated successfully"
-          
-          # Disable LTO
+          echo "=================== Generating defconfig ==================="
+          make O=out \
+            CC="ccache clang" \
+            CXX="ccache clang++" \
+            ARCH=arm64 \
+            CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
+            LD=ld.lld \
+            $KERNEL_DEFCONFIG
+
+          # Disable LTO if low memory
           if [[ $(echo "$(awk '/MemTotal/ {print $2}' /proc/meminfo) < 16000000" | bc -l) -eq 1 ]]; then
             scripts/config --file out/.config -d LTO -d LTO_CLANG -d THINLTO -e LTO_NONE
           fi
 
+          echo "=================== Building kernel ==================="
           make O=out \
-            CC="ccache $CLANG_PATH/bin/clang" \
-            CXX="ccache $CLANG_PATH/bin/clang++" \
-            HOSTCC="gcc -B/usr/bin" \
-            HOSTCXX="g++ -B/usr/bin" \
-            HOSTLD="/usr/bin/ld" \
+            CC="ccache clang" \
+            CXX="ccache clang++" \
             ARCH=arm64 \
-            LLVM=1 \
-            LLVM_IAS=1 \
             -j$(nproc) \
+            CROSS_COMPILE=$CLANG_PATH/bin/aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
+            LD=ld.lld \
             2>&1 | tee kernel.log
+
+          # Проверяем, создался ли Image
+          if [ ! -f out/arch/arm64/boot/Image ]; then
+            echo "❌ Build failed – Image not found"
+            exit 1
+          fi
+          echo "✅ Kernel Image built successfully"
 
       - name: Create Anykernel3 file
         run: |
           cd $GITHUB_WORKSPACE/kernel
           export KERNEL_PATH=$PWD
           git clone https://gitlab.com/inferno0230/AnyKernel3.git --depth=1 $KERNEL_PATH/AnyKernel3
-          if test -e $KERNEL_PATH/out/arch/arm64/boot/Image && test -d $KERNEL_PATH/AnyKernel3; then
+          if [ -f $KERNEL_PATH/out/arch/arm64/boot/Image ] && [ -d $KERNEL_PATH/AnyKernel3 ]; then
              zip_name="PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip"
              cd $KERNEL_PATH/AnyKernel3
              cp $KERNEL_PATH/out/arch/arm64/boot/Image .
              zip -r ${zip_name} *
              mv ${zip_name} $KERNEL_PATH/out/arch/arm64/boot/
+             echo "✅ ZIP created: $KERNEL_PATH/out/arch/arm64/boot/${zip_name}"
           else
              echo "❌ Image or AnyKernel3 not found – build failed"
              exit 1

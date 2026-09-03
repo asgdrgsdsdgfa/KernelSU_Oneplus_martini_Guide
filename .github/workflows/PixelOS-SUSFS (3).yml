@@ -139,8 +139,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PixelOS-SUSFS-martini-${{ env.TAG_NAME }}
-          path: |
-            kernel/AnyKernel3/*
+          path: kernel/out/arch/arm64/boot/PixelOS-SUSFS-martini-${{ env.TAG_NAME }}.zip
+          if-no-files-found: error
 
       - name: Upload to Release
         if: github.event.inputs.RELEASE_CONFIG == 'true'

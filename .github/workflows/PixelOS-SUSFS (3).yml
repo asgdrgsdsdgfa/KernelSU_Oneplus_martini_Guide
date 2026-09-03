@@ -120,12 +120,11 @@ jobs:
             LD=ld.lld \
             $KERNEL_DEFCONFIG
 
-          # Явно отключаем LTO (независимо от памяти)
           echo "=================== Disabling LTO ==================="
           scripts/config --file out/.config -d LTO -d LTO_CLANG -d THINLTO -e LTO_NONE
 
           echo "=================== Building kernel with reduced parallelism ==================="
-          # Используем -j2 и добавляем -pipe для ускорения
+          set -o pipefail
           make O=out \
             CC="ccache $CLANG_PATH/bin/clang" \
             CXX="ccache $CLANG_PATH/bin/clang++" \
@@ -138,6 +137,9 @@ jobs:
             CROSS_COMPILE_ARM32=$CLANG_PATH/bin/arm-linux-gnueabi- \
             LD=ld.lld \
             2>&1 | tee kernel.log
+
+          echo "=================== SEARCHING ERRORS ==================="
+          grep -nEi "error:|fatal:|undefined reference|No such file|cannot find|ld:|clang: error|gcc: error" kernel.log | tail -n 50 || true
 
           if [ ! -f out/arch/arm64/boot/Image ]; then
             echo "❌ Build failed – Image not found"

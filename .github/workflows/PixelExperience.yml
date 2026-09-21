@@ -11,7 +11,7 @@ on:
       KERNEL_SOURCE:
         description: 'Kernel Source'
         required: true
-        default: "https://github.com/PixelExperience-Devices/kernel_oneplus_martini.git"
+        default: "https://github.com/asgdrgsdsdgfa/kernel_oneplus_martini"
         type: string
       KERNEL_SOURCE_BRANCH:
         description: 'Kernel Branch'
@@ -225,11 +225,15 @@ jobs:
             mv "$zip_name" "$KERNEL_PATH/out/arch/arm64/boot/"
 
             echo "=== PACKAGE CHECK ==="
-            unzip -l "$KERNEL_PATH/out/arch/arm64/boot/$zip_name" | grep -E '(^|/)Image$' || {
+            ZIP_PATH="$KERNEL_PATH/out/arch/arm64/boot/$zip_name"
+            echo "Checking: $ZIP_PATH"
+            unzip -Z1 "$ZIP_PATH" | tee /tmp/anykernel-files.txt
+            if ! grep -Fxq 'Image' /tmp/anykernel-files.txt; then
               echo "❌ Image missing from AnyKernel package"
               exit 1
-            }
-            echo "✅ ZIP created: $KERNEL_PATH/out/arch/arm64/boot/$zip_name"
+            fi
+            echo "✅ Image found in AnyKernel package"
+            echo "✅ ZIP created: $ZIP_PATH"
           else
             echo "❌ Image or AnyKernel3 not found – build failed"
             exit 1

@@ -16,7 +16,7 @@ on:
       KERNEL_SOURCE_BRANCH:
         description: 'Kernel Branch'
         required: true
-        default: "thirteen"
+        default: "thirteen-wip"
         type: string
       KERNEL_DEFCONFIG:
         description: 'Kernel Config'
